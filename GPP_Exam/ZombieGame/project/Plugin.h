@@ -32,8 +32,6 @@ public:
 	void Render(float dt) const override;
 
 private:
-	//TESTING
-	int tempTakenSlots = 0;
 
 	//Interface, used to request data from/perform actions with the AI Framework
 	IExamInterface* m_pInterface = nullptr;
@@ -47,25 +45,19 @@ private:
 	bool m_RemoveItem = false; //Demo purpose
 	float m_AngSpeed = 0.f; //Demo purpose
 
-	//UINT m_InventorySlot = 0; //put it in pGlobals->
+	//UINT m_InventorySlot = 0; // I put it in m_pGlobals
 
 	Elite::Vector2 m_NextTargetPos{};
 
 	//Own Variables--------
 	GlobalVariables* m_pGlobals;
 	Elite::Blackboard* m_pBlackboard;
-	State* m_pCurrentState;
-	State* m_pGoalState;
-	SteeringState* m_pSteeringState;
 	SteeringPlugin_Output* m_pSteering;
 	std::vector<HouseInfo>* m_pHousesInFOV;
 	std::vector<EntityInfo>* m_pEntitiesInFOV;
-	//ItemInfo* m_pNearbyItem;
 
 	//GOAP
 	Planner* m_pPlanner;
-	std::string m_CurrentState;
-	std::string m_CurrentGoal;
 
 	//Steering
 	ISteeringBehavior* m_pSteeringBehavior;
@@ -77,8 +69,9 @@ private:
 	BlendedSteering* m_pBlendedSteeringFleeFace;
 	BlendedSteering* m_pBlendedSteeringSeekFace; //just using seek, caused some bugs going in and out spinning
 
-	//Own Functions-------
-	bool ReachedTarget(const AgentInfo& agent, const Elite::Vector2& targetPos) const;
+
+	//Own Functions
+	void UpdateSteering();
 };
 
 //ENTRY

@@ -16,7 +16,7 @@ bool HasItem(Elite::Blackboard* pBlackboard, const eItemType& type)
 		return false;
 
 
-	for (int i{}; i < pInterface->Inventory_GetCapacity(); ++i)
+	for (size_t i{}; i < pInterface->Inventory_GetCapacity(); ++i)
 	{
 		ItemInfo item;
 		if(!pInterface->Inventory_GetItem(i, item))
@@ -48,6 +48,8 @@ bool NeedsItem(Elite::Blackboard* pBlackboard)
 	
 	if (!HasItem(pBlackboard, item.Type) || item.Type == eItemType::FOOD)
 		return true;
+
+	return false;
 }
 //
 
@@ -75,7 +77,7 @@ HouseInfo GetClosestSeenHouse(Elite::Blackboard* pBlackboard)
 	return closestHouse;
 }
 
-bool IsNewHouse(Elite::Blackboard* pBlackboard)
+bool HasHouseToLoot(Elite::Blackboard* pBlackboard)
 {
 	GlobalVariables* pGlobals;
 	if (!pBlackboard->GetData("Globals", pGlobals) || pGlobals == nullptr)
@@ -152,7 +154,7 @@ bool IsNewHouse(Elite::Blackboard* pBlackboard)
 	//return true;
 }
 
-bool PurgeZoneInFOV(Elite::Blackboard* pBlackboard)
+bool EntityTypeInFOV(Elite::Blackboard* pBlackboard, const eEntityType& type)
 {
 	std::vector<EntityInfo>* pEntities;
 	if (!pBlackboard->GetData("EntitiesInFOV", pEntities))
@@ -160,22 +162,11 @@ bool PurgeZoneInFOV(Elite::Blackboard* pBlackboard)
 
 	for (const auto& e : *pEntities)
 	{
-		if (e.Type == eEntityType::PURGEZONE)
+		if (e.Type == type)
 			return true;
 	}
 	return false;
 }
-
-
-
-//OWN------------------------------------------------------------------------------
-//bool ReachedTarget(const AgentInfo& agent, const Elite::Vector2& targetPos)
-//{
-//	if (agent.Position.Distance(targetPos) <= agent.GrabRange)
-//		return true;
-//
-//	return false;
-//}
 
 
 #pragma endregion

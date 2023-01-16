@@ -14,12 +14,6 @@ enum class SteeringState
 	FaceAndFlee
 };
 
-struct House
-{
-	HouseInfo houseInfo;
-	bool isVisited;
-};
-
 //make a map of strings and inventorySlot numbers so i can call the name of an item and get the inventory slot
 struct GlobalVariables
 {
@@ -30,14 +24,13 @@ struct GlobalVariables
 
 	//Houses
 	std::vector<HouseInfo> seenHouses{}; //will replace visitedHouses
-	std::vector<HouseInfo> visitedHouses;
+	std::vector<HouseInfo> visitedHouses{};
 	HouseInfo currentHouse{ {0,0} };
 	bool topHouseVisited = false;
 	bool bottomHouseVisited = false;
 
 	//Other
 	PurgeZoneInfo purgeZone{};
-	std::vector<ItemInfo> storedItems;
 	float minRadius{};
 	float maxRadius{};
 	float beginRadius{};
@@ -45,7 +38,6 @@ struct GlobalVariables
 
 	//GOAP
 	bool actionEnd = false;
-	//States
 	State currentState;
 	State goalState;
 	Elite::Vector2 goalPosition{};

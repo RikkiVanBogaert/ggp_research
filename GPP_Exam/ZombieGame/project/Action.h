@@ -15,22 +15,12 @@ struct AgentInfo;
 
 struct State
 {
-	State(std::string string, bool ean) : stateString{ string }, stateBool{ ean } {}
-	State() {}
 	std::string stateString = {};
 	bool stateBool = false; 
 
 	bool operator==(const State& STATE) const;
 	bool operator!=(const State& STATE) const;
 };
-
-//helperFunctions
-//void FindItemSlot(const eItemType& type, int& slot, 
-	//const GlobalVariables& pGlobals, IExamInterface& pInterface, ItemInfo& item);
-//bool HasItemA(Elite::Blackboard* pBlackboard, const eItemType& type);
-//bool NeedsItemA(Elite::Blackboard* pBlackboard);
-//bool GiveDuplicateSpot(Elite::Blackboard* pBlackboard, int& spot);
-
 
 class Action
 {
@@ -42,7 +32,6 @@ public:
 
 	State GetPrecondition() const { return m_Precondition; }
 	State GetEffect() const { return m_Effect; }
-	//bool GetActionEnded() const { return m_ActionEnd; }
 
 protected:
 	State m_Precondition;
@@ -53,10 +42,10 @@ protected:
 };
 
 //EXPLORATION LOGIC--------------------------------------------------------------
-class Explore final : public Action
+class ExploreRect final : public Action
 {
 public:
-	Explore();
+	ExploreRect();
 
 	virtual void ExecuteEvent(Elite::Blackboard* pBlackboard) override;
 
@@ -93,10 +82,9 @@ public:
 
 private:
 	float m_Angle = 0;
-	float m_SearchRadius = 0;
-	int m_CircleState = 0;
 };
 
+//HOUSE LOGIC--------------------------------------------------------------
 class GoInHouse final : public Action
 {
 public:
@@ -140,24 +128,6 @@ public:
 	virtual void ExecuteEvent(Elite::Blackboard* pBlackboard) override;
 
 };
-
-//class CheckFood final : public Action
-//{
-//public:
-//	CheckFood();
-//
-//	virtual void ExecuteEvent(Elite::Blackboard* pBlackboard) override;
-//
-//};
-//
-//class FindFood final : public Action
-//{
-//public:
-//	FindFood();
-//
-//	virtual void ExecuteEvent(Elite::Blackboard* pBlackboard) override;
-//
-//};
 
 class EatFood final : public Action
 {
@@ -211,7 +181,7 @@ private:
 
 };
 
-//PURGEZONE------------------------------
+//PURGEZONE LOGIC------------------------------
 class RunFromPurgeZone final : public Action
 {
 public:

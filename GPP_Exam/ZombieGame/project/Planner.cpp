@@ -46,7 +46,7 @@ void Planner::FindPlan(GlobalVariables& pGlobals)
 	{
 		nodes.push_back({ a, false });
 	}
-	MakePlan2(pGlobals, pGlobals.goalState, nodes);
+	MakePlan(pGlobals, pGlobals.goalState, nodes);
 
 
 	//std::reverse(m_Plan.begin(), m_Plan.end());
@@ -55,7 +55,7 @@ void Planner::FindPlan(GlobalVariables& pGlobals)
 	//std::cout << "FOUND PLAN\n";
 }
 
-bool Planner::MakePlan2(GlobalVariables& pGlobals, const State& parentState, std::vector<Node> usableActs)
+bool Planner::MakePlan(GlobalVariables& pGlobals, const State& parentState, std::vector<Node> usableActs)
 {
 	////maybe do it via using copy parameter on usableActs instead of putting them in a new nodes vector
 	//std::vector<Node> nodes{};
@@ -124,7 +124,7 @@ bool Planner::MakePlan2(GlobalVariables& pGlobals, const State& parentState, std
 			}
 
 			//we dont want to add the node we just used, into the node pool again so we make a new vec without the currentNode
-			if (MakePlan2(pGlobals, usableNodes[i].pAction->GetPrecondition(), nodesWithoutCurrent))
+			if (MakePlan(pGlobals, usableNodes[i].pAction->GetPrecondition(), nodesWithoutCurrent))
 			{
 				m_Plan.push_back(usableNodes[i].pAction);
 			}
@@ -146,8 +146,6 @@ void Planner::ExecutePlan(Elite::Blackboard* pBlackboard)
 
 	if(m_Plan.size() > 0)
 	{
-		//if (!m_Plan[m_CurrentAction]->ConditionMet(pGlobals->currentHouseState)) //if next action doesnt meet condition anymore, find new plan
-			//FindPlan(pGlobals->;
 
 		m_Plan[0]->ExecuteEvent(pBlackboard);
 
@@ -169,8 +167,6 @@ void Planner::ExecutePlan(Elite::Blackboard* pBlackboard)
 		std::cout << "GOAL IS REACHED\n";
 		pGlobals->currentState = { "Neutral", true };
 	}
-
-	ManageInventory(*pGlobals, pInterface);
 }
 
 void Planner::ManagePriorities(Elite::Blackboard* pBlackboard)
@@ -192,7 +188,7 @@ void Planner::ManagePriorities(Elite::Blackboard* pBlackboard)
 
 	auto agentInfo = pInterface->Agent_GetInfo();
 
-	if (PurgeZoneInFOV(pBlackboard))
+	if (EntityTypeInFOV(pBlackboard, eEntityType::PURGEZONE))
 	{
 		//loop through all entities in FOV and if any of them is a zone, do zone,
 		//if any is an enemy, do enemy.....etc
@@ -210,20 +206,20 @@ void Planner::ManagePriorities(Elite::Blackboard* pBlackboard)
 		pGlobals->goalState = { "HasHealed", true };
 		FindPlan(*pGlobals);
 	}
-	else if (pEntities->size() > 0 && (*pEntities)[0].Type == eEntityType::ENEMY &&
+	else if (EntityTypeInFOV(pBlackboard, eEntityType::ENEMY) &&
 		(HasItem(m_pBlackboard, eItemType::PISTOL) || HasItem(m_pBlackboard, eItemType::SHOTGUN)))
 	{
 		pGlobals->goalState = { "DealWithEnemy", true };
 		FindPlan(*pGlobals);
 	}
-	else if (pEntities->size() > 0 && (*pEntities)[0].Type == eEntityType::ITEM)
+	else if (EntityTypeInFOV(pBlackboard, eEntityType::ITEM))
 	{
 		pGlobals->goalState = { "GetItem", true };
 		FindPlan(*pGlobals);
 	}
-	else if (IsNewHouse(pBlackboard))
+	else if (HasHouseToLoot(pBlackboard))
 	{
-		pGlobals->goalState = { "OutOfHouse", true };
+		pGlobals->goalState = { "HouseSearched", true };
 		FindPlan(*pGlobals);
 	}
 	else
@@ -232,27 +228,4 @@ void Planner::ManagePriorities(Elite::Blackboard* pBlackboard)
 		pGlobals->goalState = { "Explore", true };
 	}
 }
-
-void Planner::ManageInventory(GlobalVariables& pGlobals, IExamInterface* interfacePtr)
-{
-	//function not in actions because it should act seperatly from doing normal actions
-
-	auto agentInfo = interfacePtr->Agent_GetInfo();
-}
-
-void Planner::RemoveItemVec(std::vector<Action*>& vec, int index)
-{
-	vec[index] = vec[vec.size() - 1];
-	vec.pop_back();
-}
-
-std::vector<Planner::Node> Planner::VecWithoutItem(std::vector<Node> vec, int index)
-{
-
-	vec[index] = vec[vec.size() - 1];
-	vec.pop_back();
-
-	return vec;
-}
-
 #endif

@@ -26,6 +26,7 @@ void BlendedSteering::CalculateSteering(SteeringPlugin_Output& steering, const A
 		totalWeight += weightedBehavior.weight;
 	}
 
+	//we dont use this, so we can use full angular velocity from one behavior, and full linear vel from another
 	/*if (totalWeight > 0.f)
 	{
 		auto scale = 1.f / totalWeight;
@@ -33,11 +34,6 @@ void BlendedSteering::CalculateSteering(SteeringPlugin_Output& steering, const A
 	}*/
 	
 	steering = blendedSteering;
-	//steering.AngularVelocity = 10.f;
-	//if (pAgent->CanRenderBehavior())
-	//	DEBUGRENDERER2D->DrawDirection(pAgent->GetPosition(), blendedSteering.LinearVelocity, 7, { 0, 1, 1 }, 0.40f);
-
-	//return blendedSteering;
 
 }
 

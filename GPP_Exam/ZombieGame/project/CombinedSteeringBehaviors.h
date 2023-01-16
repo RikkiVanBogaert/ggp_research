@@ -32,21 +32,3 @@ private:
 
 	using ISteeringBehavior::SetTarget; // made private because targets need to be set on the individual behaviors, not the combined behavior
 };
-
-////*****************
-////PRIORITY STEERING
-//class PrioritySteering final : public ISteeringBehavior
-//{
-//public:
-//	PrioritySteering(std::vector<ISteeringBehavior*> priorityBehaviors)
-//		:m_PriorityBehaviors(priorityBehaviors)
-//	{}
-//
-//	void AddBehaviour(ISteeringBehavior* pBehavior) { m_PriorityBehaviors.push_back(pBehavior); }
-//	SteeringOutput CalculateSteering(float deltaT, SteeringAgent* pAgent) override;
-//
-//private:
-//	std::vector<ISteeringBehavior*> m_PriorityBehaviors = {};
-//
-//	using ISteeringBehavior::SetTarget; // made private because targets need to be set on the individual behaviors, not the combined behavior
-//};

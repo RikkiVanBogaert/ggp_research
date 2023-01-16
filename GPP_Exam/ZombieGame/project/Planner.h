@@ -13,7 +13,6 @@ public:
 	~Planner();
 
 	void Update(Elite::Blackboard* pBlackboard);
-	void ExecutePlan(Elite::Blackboard* pBlackboard);
 
 private:
 	Elite::Blackboard* m_pBlackboard;
@@ -30,13 +29,10 @@ private:
 	int m_CurrentAction = 0;
 	State m_TempGoalState{"", false};
 
-	void RemoveItemVec(std::vector<Action*>& vec, int index);
-	std::vector<Node> Planner::VecWithoutItem(std::vector<Node> vec, int index);
-
-	//bool MakePlan(GlobalVariables& pGlobals, std::vector<Action*>& usableActs);
+	void ExecutePlan(Elite::Blackboard* pBlackboard);
 	void FindPlan(GlobalVariables& pGlobals);
-	bool MakePlan2(GlobalVariables& pGlobals, const State& parentState, std::vector<Node> usableActs); //intentional copy the usableActs nodes
+	bool MakePlan(GlobalVariables& pGlobals, const State& parentState, std::vector<Node> usableActs); //intentional copy of the usableActs nodes
 	void ManagePriorities(Elite::Blackboard* pBlackboard);
-	void ManageInventory(GlobalVariables& pGlobals, IExamInterface* interfacePtr);
+
 };
 

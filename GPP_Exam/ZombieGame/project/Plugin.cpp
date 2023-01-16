@@ -28,7 +28,6 @@ void Plugin::Initialize(IBaseInterface* pInterface, PluginInfo& info)
 	info.Student_Class = "2DAE08";
 
 	//Variables
-	//m_AngSpeed = 10.f;
 	m_pSeek = new Seek();
 	m_pSpin = new Spin();
 	m_pFlee = new Flee();
@@ -47,13 +46,6 @@ void Plugin::Initialize(IBaseInterface* pInterface, PluginInfo& info)
 	m_pGlobals->beginRadius = m_pInterface->World_GetInfo().Dimensions.x / 21.f;
 	m_pGlobals->minRadius = m_pInterface->World_GetInfo().Dimensions.x / 4.5f;
 	m_pGlobals->maxRadius = m_pInterface->World_GetInfo().Dimensions.x / 4.f;
-
-	//initialize inventory slots
-	//for (int i{}; i < m_pInterface->Inventory_GetCapacity(); ++i)
-	//{
-	//	m_pGlobals->inventorySlots[i] = false;
-	//}
-
 
 	//Blackboard
 	m_pBlackboard = new Elite::Blackboard();
@@ -78,7 +70,7 @@ void Plugin::Initialize(IBaseInterface* pInterface, PluginInfo& info)
 
 		new GoInHouse(),
 		new SearchHouse(),
-		new GoOutHouse(),
+		//new GoOutHouse(),
 
 		new GetItemAction(),
 
@@ -107,8 +99,23 @@ void Plugin::DllShutdown()
 {
 	//Called wheb the plugin gets unloaded
 	//delete m_Globals.pSteeringBehavior;
-	delete m_pPlanner;
-	//delete m_pBlackboard;
+	SAFE_DELETE(m_pPlanner);
+	//SAFE_DELETE(m_pInterface);
+	/*SAFE_DELETE(m_pGlobals);
+	SAFE_DELETE(m_pBlackboard);
+	SAFE_DELETE(m_pSteering);
+	SAFE_DELETE(m_pEntitiesInFOV);
+	SAFE_DELETE(m_pPlanner);
+	SAFE_DELETE(m_pSteeringBehavior);
+	SAFE_DELETE(m_pSeek);
+	SAFE_DELETE(m_pSpin);
+	SAFE_DELETE(m_pFlee);
+	SAFE_DELETE(m_pFace);
+	SAFE_DELETE(m_pBlendedSteeringSeekSpin);
+	SAFE_DELETE(m_pBlendedSteeringFleeFace);
+	SAFE_DELETE(m_pBlendedSteeringSeekFace);
+	SAFE_DELETE(m_pHousesInFOV);
+	SAFE_DELETE(m_pHousesInFOV);*/
 }
 
 //Called only once, during initialization
@@ -116,9 +123,9 @@ void Plugin::InitGameDebugParams(GameDebugParams& params)
 {
 	params.AutoFollowCam = true; //Automatically follow the AI? (Default = true)
 	params.RenderUI = true; //Render the IMGUI Panel? (Default = true)
-	params.SpawnEnemies = false; //Do you want to spawn enemies? (Default = true)
+	params.SpawnEnemies = true; //Do you want to spawn enemies? (Default = true)
 	params.EnemyCount = 20; //How many enemies? (Default = 20)
-	params.GodMode = true; //GodMode > You can't die, can be useful to inspect certain behaviors (Default = false)
+	params.GodMode = false; //GodMode > You can't die, can be useful to inspect certain behaviors (Default = false)
 	params.LevelFile = "GameLevel.gppl";
 	params.AutoGrabClosestItem = false; //A call to Item_Grab(...) returns the closest item that can be grabbed. (EntityInfo argument is ignored)
 	params.StartingDifficultyStage = 1;
@@ -128,7 +135,7 @@ void Plugin::InitGameDebugParams(GameDebugParams& params)
 	params.SpawnPurgeZonesOnMiddleClick = true;
 	params.PrintDebugMessages = true;
 	params.ShowDebugItemNames = true;
-	params.Seed = 2; //36 is og
+	params.Seed = 22; //36 is og
 	//11 has weird navmesh glitch or something
 }
 
@@ -204,61 +211,27 @@ void Plugin::Update(float dt)
 //This function calculates the new SteeringOutput, called once per frame
 SteeringPlugin_Output Plugin::UpdateSteering(float dt)
 {
-	//TESTING
-	
-
-	//auto steering = SteeringPlugin_Output();
 
 	GlobalVariables* pGlobals;
 	if (!m_pBlackboard->GetData("Globals", pGlobals) || pGlobals == nullptr)
 		return *m_pSteering;
-
-
-	//Use the Interface (IAssignmentInterface) to 'interface' with the AI_Framework
-	auto agentInfo = m_pInterface->Agent_GetInfo();
-
 
 	//this will put the info in the blackboard
 	*m_pHousesInFOV = GetHousesInFOV(); 
 	*m_pEntitiesInFOV = GetEntitiesInFOV();
 
 	m_pPlanner->Update(m_pBlackboard);
+	UpdateSteering();
 
-	//std::cout << m_pGlobals->currentState.stateString << ' ' << m_pGlobals->goalState.stateString << "\n";
-	//std::cout << m_pEntitiesInFOV->size() << "\n";
-
+	//Use the Interface (IAssignmentInterface) to 'interface' with the AI_Framework
+	auto agentInfo = m_pInterface->Agent_GetInfo();
 	if (Distance(m_NextTargetPos, agentInfo.Position) < 2.f)
 	{
 		m_pSteering->LinearVelocity = Elite::ZeroVector2;
 	}
 
-	switch (pGlobals->steeringState)
-	{
-	case SteeringState::Seek:
-		m_pSteering->RunMode = false;
-		m_pSteeringBehavior = m_pBlendedSteeringSeekFace;
-		break;
-	case SteeringState::Flee:
-		m_pSteering->RunMode = true;
-		m_pSteeringBehavior = m_pSeek;
-		//use seek because otherwise he gets stuck in houses since fleeing from a point doesnt use the navmesh (used for escaping purgezone)
-		break;
-	case SteeringState::Face:
-		m_pSteering->RunMode = false;
-		m_pSteeringBehavior = m_pFace;
-		break;
-	case SteeringState::SeekWhileSpinning:
-		m_pSteering->RunMode = false;
-		m_pSteeringBehavior = m_pBlendedSteeringSeekSpin;
-		break;
-	case SteeringState::FaceAndFlee:
-		m_pSteering->RunMode = false;
-		m_pSteeringBehavior = m_pBlendedSteeringFleeFace;
-		break;
-	default:
-		break;
-	}
-
+	//std::cout << m_pGlobals->currentState.stateString << ' ' << m_pGlobals->goalState.stateString << "\n";
+	//std::cout << m_pEntitiesInFOV->size() << "\n";
 	//std::cout << pGlobals->takenSlots << '\n';
 	//SteeringPlugin_Output is works the exact same way a SteeringBehaviour output
 
@@ -285,7 +258,6 @@ void Plugin::Render(float dt) const
 	m_pInterface->Draw_SolidCircle(m_Target, .7f, { 0,0 }, { 1, 0, 0 });
 
 	//DebugRendering
-	//std::cout << m_pGlobals->goalPosition.x << "  " << m_pGlobals->goalPosition.y << '\n';
 	m_pInterface->Draw_Point(m_NextTargetPos, 5, { 1,1,1 });
 	for (const HouseInfo& h : m_pGlobals->visitedHouses)
 	{
@@ -297,13 +269,41 @@ void Plugin::Render(float dt) const
 		m_pInterface->Draw_Point(h.Center, 10, { 1, 0, 0 });
 	}
 
-	m_pInterface->Draw_Point(m_pGlobals->currentHouse.Center, 15, { 0, 1, 0 });
+	m_pInterface->Draw_Point(m_pGlobals->currentHouse.Center, 10, { 0, 1, 0 });
 
-	//map circles
-	//m_pInterface->Draw_Circle(m_pInterface->World_GetInfo().Center, m_pGlobals->beginRadius, { 0, 1, 0 });
-	//m_pInterface->Draw_Circle(m_pInterface->World_GetInfo().Center, m_pGlobals->minRadius, { 1, 0, 1 });
+	//map circle
 	m_pInterface->Draw_Circle(m_pInterface->World_GetInfo().Center, m_pGlobals->maxRadius, { 1, 0, 0 });
 
+}
+
+void Plugin::UpdateSteering()
+{
+	switch (m_pGlobals->steeringState)
+	{
+	case SteeringState::Seek:
+		m_pSteering->RunMode = false;
+		m_pSteeringBehavior = m_pBlendedSteeringSeekFace;
+		break;
+	case SteeringState::Flee:
+		m_pSteering->RunMode = true;
+		m_pSteeringBehavior = m_pSeek;
+		//use seek because otherwise he gets stuck in houses since fleeing from a point doesnt use the navmesh (used for escaping purgezone)
+		break;
+	case SteeringState::Face:
+		m_pSteering->RunMode = false;
+		m_pSteeringBehavior = m_pFace;
+		break;
+	case SteeringState::SeekWhileSpinning:
+		m_pSteering->RunMode = false;
+		m_pSteeringBehavior = m_pBlendedSteeringSeekSpin;
+		break;
+	case SteeringState::FaceAndFlee:
+		m_pSteering->RunMode = false;
+		m_pSteeringBehavior = m_pBlendedSteeringFleeFace;
+		break;
+	default:
+		break;
+	}
 }
 
 std::vector<HouseInfo> Plugin::GetHousesInFOV() const
@@ -342,12 +342,4 @@ std::vector<EntityInfo> Plugin::GetEntitiesInFOV() const
 	}
 
 	return vEntitiesInFOV;
-}
-
-bool Plugin::ReachedTarget(const AgentInfo& agent, const Elite::Vector2& targetPos) const
-{
-	if (agent.Position.Distance(targetPos) <= agent.GrabRange)
-		return true;
-
-	return false;
 }
