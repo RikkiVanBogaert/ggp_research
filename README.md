@@ -24,4 +24,20 @@ This makes it so that all the actions fit together like domino pieces, and all t
 
 ![dominoExplanation](https://user-images.githubusercontent.com/120639013/213439640-7dca1086-fb62-489f-bc64-c7eaeec78e37.png)
 
+GOAP is like previously mentioned, very flexible.
+Which means that if the current state changes, or if another external factor causes one of the states to not be achievable anymore,
+the planner will adapt and find a new plan which is doable under the current conditions.
 
+The planner can also receive multiple goals.
+Each goal will have a different priotity, in order for the planner to try to make a plan for the most important goal first,
+and if it cant find a plan, it moves on to the next goal.
+
+
+In the current version of the game, not all aspects of GOAP have been implemented (yet).
+Such as the cost-based plan finding, which allows the planner to find the cheapest goal based on the costs of each action in the plan.
+Which will allow it to make multiple plans, and select the cheapest one to be executed.
+This hasnt been implemented since the currently used game, is too simple in the sense that there arent multiple ways to get to a goal.
+So finding one plan which lead to the current goal, will always be the best plan (if the actions have been implemented correctly).
+
+Apart from this feauture, the GOAP-structure is reusable in different games.
+The only things that have to be added manually every time, are the actions themselves, and the order of priorities in which the goals should be checked.
