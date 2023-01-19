@@ -19,5 +19,6 @@
     <ClInclude Include="EBlackboard.h" />
     <ClInclude Include="CombinedSteeringBehaviors.h" />
     <ClInclude Include="MyIncludes.h" />
+    <ClInclude Include="ActionHelpers.h" />
   </ItemGroup>
 </Project>

@@ -1,6 +1,5 @@
 #pragma once
 class Action;
-//class IExamInterface;
 struct GlobalVariables;
 struct State;
 
@@ -24,7 +23,7 @@ private:
 	};
 
 	std::vector<Action*> m_Actions;
-	std::vector<std::vector<Action*>> m_PossiblePlans;
+	//std::vector<std::vector<Action*>> m_PossiblePlans; //not implemented yet
 	std::vector<Action*> m_Plan;
 	int m_CurrentAction = 0;
 	State m_TempGoalState{"", false};

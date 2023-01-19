@@ -41,38 +41,6 @@ protected:
 	bool ReachedTarget(const AgentInfo& agent, const Elite::Vector2& targetPos) const;
 };
 
-//EXPLORATION LOGIC--------------------------------------------------------------
-class ExploreRect final : public Action
-{
-public:
-	ExploreRect();
-
-	virtual void ExecuteEvent(Elite::Blackboard* pBlackboard) override;
-
-private:
-	bool m_TopLeftExplored = false;
-	bool m_TopMidExplored = false;
-	bool m_TopRightExplored = false;
-	bool m_BottomLeftExplored = false;
-	bool m_BottomRightExplored = false;
-};
-
-class ExploreSpiral final : public Action
-{
-public:
-	ExploreSpiral();
-
-	virtual void ExecuteEvent(Elite::Blackboard* pBlackboard) override;
-
-private:
-	float m_Angle = 0;
-	float m_Radius = 0;
-	float m_SearchRadius = 0;
-	int m_Steps = 16;
-
-	bool m_GoingOut = true;
-};
-
 class ExploreCircle final : public Action
 {
 public:
@@ -94,6 +62,7 @@ public:
 
 };
 
+
 class SearchHouse final : public Action
 {
 public:
@@ -101,23 +70,7 @@ public:
 
 	virtual void ExecuteEvent(Elite::Blackboard* pBlackboard) override;
 
-private:
-	bool m_SeekingTopHouse = false;
-	bool m_SeekingBottomHouse = false;
-
-	bool m_TopChecked = false;
-	bool m_BottomChecked = false;
 };
-
-class GoOutHouse final : public Action
-{
-public:
-	GoOutHouse();
-
-	virtual void ExecuteEvent(Elite::Blackboard* pBlackboard) override;
-
-};
-
 
 //ITEM LOGIC----------------------------------------------------------------
 class GetItemAction final : public Action
@@ -155,18 +108,6 @@ public:
 
 	virtual void ExecuteEvent(Elite::Blackboard* pBlackboard) override;
 
-};
-
-class RunAway final : public Action
-{
-public:
-	RunAway();
-
-	virtual void ExecuteEvent(Elite::Blackboard* pBlackboard) override;
-
-private:
-	const float m_FleeRadius = 20.f;
-	Elite::Vector2 m_FirstSeenEnemyPos{};
 };
 
 class KillEnemy final : public Action

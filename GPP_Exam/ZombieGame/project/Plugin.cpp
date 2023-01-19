@@ -2,13 +2,6 @@
 #include "Plugin.h"
 #include "IExamInterface.h"
 #include "Planner.h"
-//#include "SteeringBehavior.h"
-//#include "CombinedSteeringBehaviors.h"
-//#include "Action.h"
-//#include "MyHelperStructs.h"
-//#include "MyHelperFunctions.h"
-//TEST GIT
-
 
 using namespace std;
 using namespace Elite;
@@ -43,9 +36,7 @@ void Plugin::Initialize(IBaseInterface* pInterface, PluginInfo& info)
 	m_pGlobals->currentState = { "Neutral", true };
 	m_pGlobals->goalState = { "Explore", true };
 	m_pGlobals->steeringState = SteeringState::Seek;
-	m_pGlobals->beginRadius = m_pInterface->World_GetInfo().Dimensions.x / 21.f;
-	m_pGlobals->minRadius = m_pInterface->World_GetInfo().Dimensions.x / 4.5f;
-	m_pGlobals->maxRadius = m_pInterface->World_GetInfo().Dimensions.x / 4.f;
+	m_pGlobals->explorationRadius = m_pInterface->World_GetInfo().Dimensions.x / 4.f;
 
 	//Blackboard
 	m_pBlackboard = new Elite::Blackboard();
@@ -64,25 +55,19 @@ void Plugin::Initialize(IBaseInterface* pInterface, PluginInfo& info)
 	//GOAP
 	std::vector<Action*> actions
 	{
-		//new Explore(),
-		//new ExploreSpiral(),
+		//Exploration
 		new ExploreCircle(),
-
+		//House behavior
 		new GoInHouse(),
 		new SearchHouse(),
-		//new GoOutHouse(),
-
+		//Item Handling
 		new GetItemAction(),
-
-		//new CheckFood(),
-		//new FindFood(),
 		new EatFood(),
 		new Heal(),
-
+		//Enemy Handling
 		new CheckBullets(),
-		//new RunAway(),
 		new KillEnemy(),
-
+		//PurgeZone Handling
 		new RunFromPurgeZone()
 	};
 	m_pPlanner = new Planner(m_pBlackboard, actions);
@@ -98,8 +83,9 @@ void Plugin::DllInit()
 void Plugin::DllShutdown()
 {
 	//Called wheb the plugin gets unloaded
-	//delete m_Globals.pSteeringBehavior;
 	SAFE_DELETE(m_pPlanner);
+
+	//Dont need to delete all of this, no memory leaks
 	//SAFE_DELETE(m_pInterface);
 	/*SAFE_DELETE(m_pGlobals);
 	SAFE_DELETE(m_pBlackboard);
@@ -123,15 +109,15 @@ void Plugin::InitGameDebugParams(GameDebugParams& params)
 {
 	params.AutoFollowCam = true; //Automatically follow the AI? (Default = true)
 	params.RenderUI = true; //Render the IMGUI Panel? (Default = true)
-	params.SpawnEnemies = true; //Do you want to spawn enemies? (Default = true)
+	params.SpawnEnemies = false; //Do you want to spawn enemies? (Default = true)
 	params.EnemyCount = 20; //How many enemies? (Default = 20)
 	params.GodMode = false; //GodMode > You can't die, can be useful to inspect certain behaviors (Default = false)
 	params.LevelFile = "GameLevel.gppl";
 	params.AutoGrabClosestItem = false; //A call to Item_Grab(...) returns the closest item that can be grabbed. (EntityInfo argument is ignored)
 	params.StartingDifficultyStage = 1;
 	params.InfiniteStamina = false;
-	params.SpawnDebugPistol = true;
-	params.SpawnDebugShotgun = true;
+	params.SpawnDebugPistol = false;
+	params.SpawnDebugShotgun = false;
 	params.SpawnPurgeZonesOnMiddleClick = true;
 	params.PrintDebugMessages = true;
 	params.ShowDebugItemNames = true;
@@ -212,10 +198,6 @@ void Plugin::Update(float dt)
 SteeringPlugin_Output Plugin::UpdateSteering(float dt)
 {
 
-	GlobalVariables* pGlobals;
-	if (!m_pBlackboard->GetData("Globals", pGlobals) || pGlobals == nullptr)
-		return *m_pSteering;
-
 	//this will put the info in the blackboard
 	*m_pHousesInFOV = GetHousesInFOV(); 
 	*m_pEntitiesInFOV = GetEntitiesInFOV();
@@ -224,23 +206,17 @@ SteeringPlugin_Output Plugin::UpdateSteering(float dt)
 	UpdateSteering();
 
 	//Use the Interface (IAssignmentInterface) to 'interface' with the AI_Framework
+	//if (Distance(m_NextTargetPos, agentInfo.Position) < 2.f)
+	//{
+	//	m_pSteering->LinearVelocity = Elite::ZeroVector2;
+	//}
+ //   @End (Demo Purposes)
+ //   	m_GrabItem = false; //Reset State
+ //   	m_UseItem = false;
+ //   	m_RemoveItem = false;
+
+
 	auto agentInfo = m_pInterface->Agent_GetInfo();
-	if (Distance(m_NextTargetPos, agentInfo.Position) < 2.f)
-	{
-		m_pSteering->LinearVelocity = Elite::ZeroVector2;
-	}
-
-	//std::cout << m_pGlobals->currentState.stateString << ' ' << m_pGlobals->goalState.stateString << "\n";
-	//std::cout << m_pEntitiesInFOV->size() << "\n";
-	//std::cout << pGlobals->takenSlots << '\n';
-	//SteeringPlugin_Output is works the exact same way a SteeringBehaviour output
-
-//@End (Demo Purposes)
-	m_GrabItem = false; //Reset State
-	m_UseItem = false;
-	m_RemoveItem = false;
-
-
 	//SteeringPlugin_Output* pSteering{};
 	m_NextTargetPos = m_pInterface->NavMesh_GetClosestPathPoint(m_pGlobals->goalPosition);
 	m_pSteeringBehavior->SetTarget(m_NextTargetPos);
@@ -271,8 +247,8 @@ void Plugin::Render(float dt) const
 
 	m_pInterface->Draw_Point(m_pGlobals->currentHouse.Center, 10, { 0, 1, 0 });
 
-	//map circle
-	m_pInterface->Draw_Circle(m_pInterface->World_GetInfo().Center, m_pGlobals->maxRadius, { 1, 0, 0 });
+	//map circle for exploration
+	m_pInterface->Draw_Circle(m_pInterface->World_GetInfo().Center, m_pGlobals->explorationRadius, { 1, 0, 0 });
 
 }
 

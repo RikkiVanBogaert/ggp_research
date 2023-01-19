@@ -44,6 +44,7 @@ bool NeedsItem(Elite::Blackboard* pBlackboard)
 		return false;
 
 	ItemInfo item;
+
 	pInterface->Item_GetInfo((*pEntities)[0], item);
 	
 	if (!HasItem(pBlackboard, item.Type) || item.Type == eItemType::FOOD)

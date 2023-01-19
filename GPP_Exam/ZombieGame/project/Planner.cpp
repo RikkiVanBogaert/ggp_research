@@ -38,7 +38,7 @@ void Planner::FindPlan(GlobalVariables& pGlobals)
 	}
 
 	m_Plan.clear();
-	m_PossiblePlans.clear();
+	//m_PossiblePlans.clear();
 	//still have to use possiblePlans to find cheapest plan
 
 	std::vector<Node> nodes;
@@ -49,56 +49,11 @@ void Planner::FindPlan(GlobalVariables& pGlobals)
 	MakePlan(pGlobals, pGlobals.goalState, nodes);
 
 
-	//std::reverse(m_Plan.begin(), m_Plan.end());
-
-	//m_TempStates = m_Plan[0]->GetPrecondition();
 	//std::cout << "FOUND PLAN\n";
 }
 
 bool Planner::MakePlan(GlobalVariables& pGlobals, const State& parentState, std::vector<Node> usableActs)
 {
-	////maybe do it via using copy parameter on usableActs instead of putting them in a new nodes vector
-	//std::vector<Node> nodes{};
-	//for (Node a : usableActs) //Add all the usableActions into nodes
-	//{
-	//	nodes.push_back(a);
-	//}
-	//for (Node& n : nodes) //Check if the effect of the node, is the same as the precondition of the next node
-	//{
-	//	if (n.pAction->GetEffect() == parentState)
-	//		n.isUsable = true;
-	//}
-	//if (nodes.size() == 0) //if there are no other usableNodes, return false
-	//	return false;
-	//std::vector<Node> usableNodes;
-	//for (size_t i{}; i < nodes.size(); ++i) //if its not, then remove them from the vector
-	//{
-	//	if (nodes[i].isUsable)
-	//		usableNodes.push_back(nodes[i]);
-	//}
-	//for (size_t i{}; i < usableNodes.size(); ++i)
-	//{
-	//	if (usableNodes[i].pAction->GetPrecondition() == pGlobals.currentState)
-	//	{
-	//		m_Plan.push_back(usableNodes[i].pAction);
-	//		return true; //we found the last node in the plan
-	//	}
-	//	else
-	//	{
-	//		std::vector<Node> nodesWithoutCurrent;
-	//		for (Node n : nodes)
-	//		{
-	//			if(n.pAction != usableNodes[i].pAction)
-	//				nodesWithoutCurrent.push_back(n);
-	//		}
-	//		//we dont want to add the node we just used, into the node pool again so we make a new vec without the currentNode
-	//		if (MakePlan2(pGlobals, usableNodes[i].pAction->GetPrecondition(), nodesWithoutCurrent))
-	//		{
-	//			m_Plan.push_back(usableNodes[i].pAction);
-	//		}
-	//	}
-	//}
-	//return false;
 
 	std::vector<Node> usableNodes;
 	for (Node& n : usableActs) //Check if the effect of the node, is the same as the precondition of the next node
@@ -183,15 +138,13 @@ void Planner::ManagePriorities(Elite::Blackboard* pBlackboard)
 	if (!pBlackboard->GetData("EntitiesInFOV", pEntities))
 		return;
 
-	//std::cout << pGlobals->currentState.stateString << "   " << pGlobals->goalState.stateString << '\n';
-	//std::cout << pGlobals->goalPosition.x << "  " << pGlobals->goalPosition.y << '\n';
-
+	
 	auto agentInfo = pInterface->Agent_GetInfo();
 
+	//loop through all entities in FOV and if any of them is a zone, do zone,
+	//if any is an enemy, do enemy.....etc
 	if (EntityTypeInFOV(pBlackboard, eEntityType::PURGEZONE))
 	{
-		//loop through all entities in FOV and if any of them is a zone, do zone,
-		//if any is an enemy, do enemy.....etc
 		pInterface->PurgeZone_GetInfo((*pEntities)[0], pGlobals->purgeZone);
 		pGlobals->goalState = { "EscapePurgeZone", true };
 		FindPlan(*pGlobals);

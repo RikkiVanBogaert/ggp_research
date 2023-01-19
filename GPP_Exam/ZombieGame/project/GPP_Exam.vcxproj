@@ -183,6 +183,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Action.h" />
+    <ClInclude Include="ActionHelpers.h" />
     <ClInclude Include="CombinedSteeringBehaviors.h" />
     <ClInclude Include="EBlackboard.h" />
     <ClInclude Include="MyHelperFunctions.h" />

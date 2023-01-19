@@ -4,13 +4,11 @@
 #include "EBlackboard.h"
 #include "Action.h"
 #include "MyHelperStructs.h"
-//#include "MyHelperFunctions.h"
 #include "SteeringBehavior.h"
 #include "CombinedSteeringBehaviors.h"
 
 class IBaseInterface;
 class IExamInterface;
-//class ISteeringBehavior;
 class GlobalVariables;
 
 class Planner;
@@ -67,7 +65,7 @@ private:
 	Face* m_pFace;
 	BlendedSteering* m_pBlendedSteeringSeekSpin;
 	BlendedSteering* m_pBlendedSteeringFleeFace;
-	BlendedSteering* m_pBlendedSteeringSeekFace; //just using seek, caused some bugs going in and out spinning
+	BlendedSteering* m_pBlendedSteeringSeekFace; //only using seek caused some bugs going in and out spinning when switching to seek
 
 
 	//Own Functions

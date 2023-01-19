@@ -36,21 +36,3 @@ void BlendedSteering::CalculateSteering(SteeringPlugin_Output& steering, const A
 	steering = blendedSteering;
 
 }
-
-////*****************
-////PRIORITY STEERING
-//SteeringOutput PrioritySteering::CalculateSteering(float deltaT, SteeringAgent* pAgent)
-//{
-//	SteeringOutput steering = {};
-//
-//	for (auto pBehavior : m_PriorityBehaviors)
-//	{
-//		steering = pBehavior->CalculateSteering(deltaT, pAgent);
-//
-//		if (steering.IsValid)
-//			break;
-//	}
-//
-//	//If non of the behavior return a valid output, last behavior is returned
-//	return steering;
-//}

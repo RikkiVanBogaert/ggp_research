@@ -4,7 +4,7 @@
 #include "Action.h"
 #include "MyHelperStructs.h"
 #include "CombinedSteeringBehaviors.h"
-//#include "MyIncludes.h"
+#include "ActionHelpers.h"
 
 bool State::operator==(const State& STATE) const
 {
@@ -23,167 +23,6 @@ bool State::operator!=(const State& STATE) const
 		return false;
 }
 
-#pragma region //HELPERS
-void FindItemSlot(Elite::Blackboard* pBlackboard, const eItemType& type, int& slot, ItemInfo& item)
-{
-	GlobalVariables* pGlobals;
-	if (!pBlackboard->GetData("Globals", pGlobals) || pGlobals == nullptr)
-		return;
-
-	IExamInterface* pInterface;
-	if (!pBlackboard->GetData("Interface", pInterface) || pInterface == nullptr)
-		return ;
-
-	ItemInfo tempItem{};
-	for (size_t i{}; i < pInterface->Inventory_GetCapacity(); ++i)
-	{
-		if(!pInterface->Inventory_GetItem(i, tempItem))
-		{
-			continue;
-		}
-
-		if (tempItem.Type == type)
-		{
-			item = tempItem;
-			slot = i;
-			return;
-		}
-	}
-}
-
-bool HasItemA(Elite::Blackboard* pBlackboard, const eItemType& type)
-{
-	GlobalVariables* pGlobals;
-	if (!pBlackboard->GetData("Globals", pGlobals) || pGlobals == nullptr)
-		return false;
-
-	IExamInterface* pInterface;
-	if (!pBlackboard->GetData("Interface", pInterface) || pInterface == nullptr)
-		return false;
-
-
-	for (int i{}; i < pInterface->Inventory_GetCapacity(); ++i)
-	{
-		ItemInfo item;
-		if (!pInterface->Inventory_GetItem(i, item))
-			continue;
-
-		if (item.Type == type)
-			return true;
-	}
-	
-	return false;
-}
-
-bool NeedsItemA(Elite::Blackboard* pBlackboard)
-{
-	GlobalVariables* pGlobals;
-	if (!pBlackboard->GetData("Globals", pGlobals) || pGlobals == nullptr)
-		return false;
-
-	IExamInterface* pInterface;
-	if (!pBlackboard->GetData("Interface", pInterface) || pInterface == nullptr)
-		return false;
-
-	std::vector<EntityInfo>* pEntities;
-	if (!pBlackboard->GetData("EntitiesInFOV", pEntities))
-		return false;
-
-	ItemInfo item;
-	pInterface->Item_GetInfo((*pEntities)[0], item);
-
-	if (item.Type == eItemType::GARBAGE)
-		return false;
-
-	if (!HasItemA(pBlackboard, item.Type) || item.Type == eItemType::FOOD)
-		return true;
-
-	return false;
-}
-
-bool GiveDuplicateSpot(Elite::Blackboard* pBlackboard, int& spot)
-{
-	IExamInterface* pInterface;
-	if (!pBlackboard->GetData("Interface", pInterface) || pInterface == nullptr)
-		return false;
-
-	int pistolCounter{}, shotgunCounter{}, medkitCounter{};
-	int duplicateSpot{};
-	for (int i{}; i < pInterface->Inventory_GetCapacity(); ++i)
-	{
-		ItemInfo item;
-		if (!pInterface->Inventory_GetItem(i, item))
-			continue;
-
-		switch (item.Type)
-		{
-		case eItemType::PISTOL:
-			++pistolCounter;
-			if (pistolCounter == 2)
-			{
-				spot = i;
-				return true;
-			}
-			break;
-		case eItemType::SHOTGUN:
-			++shotgunCounter;
-			if (shotgunCounter == 2)
-			{
-				spot = i;
-				return true;
-			}
-			break;
-		case eItemType::MEDKIT:
-			++medkitCounter;
-			if (medkitCounter == 2)
-			{
-				spot = i;
-				return true;
-			}
-			break;
-		}
-
-	}
-	return false;
-}
-
-int GetFreeInventorySpot(Elite::Blackboard* pBlackboard)
-{
-	IExamInterface* pInterface;
-	if (!pBlackboard->GetData("Interface", pInterface) || pInterface == nullptr)
-		return false;
-
-	for (int i{}; i < pInterface->Inventory_GetCapacity(); ++i)
-	{
-		ItemInfo item;
-		if (!pInterface->Inventory_GetItem(i, item))
-		{
-			//if we dont get an item, that means the spot is free
-			return i;
-			break;
-		}
-	}
-	return -1;
-}
-
-void RemoveVisitedHouse(Elite::Blackboard* pBlackboard, const HouseInfo& house)
-{
-	GlobalVariables* pGlobals;
-	if (!pBlackboard->GetData("Globals", pGlobals) || pGlobals == nullptr)
-		return;
-
-	for (int i{}; i < pGlobals->seenHouses.size(); ++i)
-	{
-		if (house.Center != pGlobals->seenHouses[i].Center)
-			continue;
-
-		pGlobals->seenHouses[i] = pGlobals->seenHouses[pGlobals->seenHouses.size() - 1];
-		pGlobals->seenHouses.pop_back();
-	}
-
-}
-
-#pragma endregion
 
 Action::Action(const State& precondition, const State& effect, int cost):
 	m_Precondition{precondition},
@@ -211,161 +50,6 @@ bool Action::ReachedTarget(const AgentInfo& agent, const Elite::Vector2& targetP
 	return false;
 }
 
-ExploreRect::ExploreRect() :
-	Action({ "Neutral", true }, { "Explore", true }, 100) //give high cost so it will only do this if no other options are available
-{}
-
-void ExploreRect::ExecuteEvent(Elite::Blackboard* pBlackboard)
-{
-	IExamInterface* pInterface;
-	if (!pBlackboard->GetData("Interface", pInterface) || pInterface == nullptr)
-		return;
-
-	auto agentInfo = pInterface->Agent_GetInfo();
-
-	GlobalVariables* pGlobals;
-	if (!pBlackboard->GetData("Globals", pGlobals) || pGlobals == nullptr)
-		return;
-
-	pGlobals->steeringState = SteeringState::SeekWhileSpinning;
-
-	//explore the world by going to the different corners
-	const float cornerOffset{ 4 };
-	if(!m_TopLeftExplored)
-	{
-		pGlobals->goalPosition.x = pInterface->World_GetInfo().Center.x - pInterface->World_GetInfo().Dimensions.x / cornerOffset;
-		pGlobals->goalPosition.y = pInterface->World_GetInfo().Center.y + pInterface->World_GetInfo().Dimensions.y / cornerOffset;
-		if (ReachedTarget(agentInfo, pGlobals->goalPosition))
-		{
-			m_TopLeftExplored = true;
-		}
-	}
-	else if (!m_TopRightExplored)
-	{
-		pGlobals->goalPosition.x = pInterface->World_GetInfo().Center.x + pInterface->World_GetInfo().Dimensions.x / cornerOffset;
-		pGlobals->goalPosition.y = pInterface->World_GetInfo().Center.y + pInterface->World_GetInfo().Dimensions.y / cornerOffset;
-		if (ReachedTarget(agentInfo, pGlobals->goalPosition))
-		{
-			m_TopRightExplored = true;
-		}
-	}
-	else if (!m_BottomRightExplored)
-	{
-		pGlobals->goalPosition.x = pInterface->World_GetInfo().Center.x + pInterface->World_GetInfo().Dimensions.x / cornerOffset;
-		pGlobals->goalPosition.y = pInterface->World_GetInfo().Center.y - pInterface->World_GetInfo().Dimensions.y / cornerOffset;
-		if (ReachedTarget(agentInfo, pGlobals->goalPosition))
-		{
-			m_BottomRightExplored = true;
-		}
-	}
-	else if (!m_BottomLeftExplored)
-	{
-		pGlobals->goalPosition.x = pInterface->World_GetInfo().Center.x - pInterface->World_GetInfo().Dimensions.x / cornerOffset;
-		pGlobals->goalPosition.y = pInterface->World_GetInfo().Center.y - pInterface->World_GetInfo().Dimensions.y / cornerOffset;
-		if (ReachedTarget(agentInfo, pGlobals->goalPosition))
-		{
-			m_BottomLeftExplored = true;
-		}
-	}
-	else
-	{
-		//all corners have been explored, so we reset them and also the visitedHouses since the houses normally have spawned new items
-		m_TopLeftExplored = false;
-		m_TopRightExplored = false;
-		m_BottomRightExplored = false;
-		m_TopLeftExplored = false;
-		pGlobals->visitedHouses.clear();
-	}
-
-}
-
-ExploreSpiral::ExploreSpiral() :
-	Action({ "Neutral", true }, { "Explore", true }, 100) //give high cost so it will only do this if no other options are available
-{}
-
-void ExploreSpiral::ExecuteEvent(Elite::Blackboard* pBlackboard)
-{
-	IExamInterface* pInterface;
-	if (!pBlackboard->GetData("Interface", pInterface) || pInterface == nullptr)
-		return;
-
-	auto agentInfo = pInterface->Agent_GetInfo();
-
-	GlobalVariables* pGlobals;
-	if (!pBlackboard->GetData("Globals", pGlobals) || pGlobals == nullptr)
-		return;
-
-	pGlobals->steeringState = SteeringState::SeekWhileSpinning;
-
-
-	Elite::Vector2 target { pInterface->World_GetInfo().Center.x + cosf(m_Angle) * m_Radius,
-	pInterface->World_GetInfo().Center.y + sinf(m_Angle) * m_Radius };
-
-	if (m_SearchRadius == 0) 
-		m_SearchRadius = pGlobals->beginRadius;
-
-
-	const float xOffset{ 7 };
-	if (agentInfo.Position.x >= pGlobals->beginRadius - xOffset && m_SearchRadius == pGlobals->beginRadius)
-	{
-		//we searched the inner circle, go to the outer circle
-		m_SearchRadius = pGlobals->maxRadius - pGlobals->minRadius;
-
-		target = { pInterface->World_GetInfo().Center + Elite::Vector2{pGlobals->minRadius, 0} };
-		m_Radius = pGlobals->minRadius;
-	}
-	else if (agentInfo.Position.x >= pGlobals->maxRadius) //no
-	{
-		//we searched the outer circle, go to all the seenhouses again
-
-	}
-
-	const float angleIncrement{ float(M_PI) * 2.f / m_Steps };
-	float radiusIncrement{ m_SearchRadius / m_Steps };
-	if (!m_GoingOut)
-	{
-		radiusIncrement *= -1;
-	}
-
-	if (agentInfo.Position.x >= pGlobals->maxRadius - xOffset && m_GoingOut)
-	{
-		m_GoingOut = false;
-	}
-
-	//if new targetPoint is in a visitedHouse, get a new point
-	//use offset so the point isnt too close to a house (caused a bug in which he got stuck in a corner)
-	const float offset{ 5 };
-	for (const HouseInfo& h : pGlobals->visitedHouses)
-	{
-		if (target.x > h.Center.x - h.Size.x / 2 - offset && target.x < h.Center.x + h.Size.x / 2 + offset &&
-			target.y > h.Center.y - h.Size.y / 2 - offset && target.y < h.Center.y + h.Size.y / 2 + offset)
-		{
-			m_Angle += angleIncrement;
-			m_Radius += radiusIncrement;
-			return;
-		}
-	}
-
-	pGlobals->goalPosition = target;
-
-	//we reached point, get next point on spiral
-	if (Elite::Distance(agentInfo.Position, pGlobals->goalPosition) < 3)
-	{
-		m_Angle += angleIncrement;
-		m_Radius += radiusIncrement;
-	}
-
-
-	//DEBUG Drawing
-	for (int i{}; i < m_Steps; ++i)
-	{
-		pInterface->Draw_Point(pInterface->World_GetInfo().Center + 
-		Elite::Vector2{cosf(m_Angle + i * angleIncrement)* (m_Radius + i * radiusIncrement), 
-			sinf(m_Angle + i * angleIncrement)* (m_Radius + i * radiusIncrement) },
-			10, {0,0,0});
-	}
-
-}
 
 ExploreCircle::ExploreCircle() :
 	Action({ "Neutral", true }, { "Explore", true }, 100) //give high cost so it will only do this if no other options are available
@@ -388,8 +72,8 @@ void ExploreCircle::ExecuteEvent(Elite::Blackboard* pBlackboard)
 	const int steps{ 8 };
 	const float angleIncrement{ float(M_PI) * 2.f / steps };
 
-	Elite::Vector2 target{ pInterface->World_GetInfo().Center.x + cosf(m_Angle) * pGlobals->maxRadius,
-	pInterface->World_GetInfo().Center.y + sinf(m_Angle) * pGlobals->maxRadius };
+	Elite::Vector2 target{ pInterface->World_GetInfo().Center.x + cosf(m_Angle) * pGlobals->explorationRadius,
+	pInterface->World_GetInfo().Center.y + sinf(m_Angle) * pGlobals->explorationRadius };
 	
 
 	const float offset{ 5 };
@@ -424,8 +108,8 @@ void ExploreCircle::ExecuteEvent(Elite::Blackboard* pBlackboard)
 	for (int i{}; i < steps; ++i)
 	{
 		pInterface->Draw_Point(pInterface->World_GetInfo().Center +
-			Elite::Vector2{ cosf(m_Angle + i * angleIncrement) * (pGlobals->maxRadius),
-				sinf(m_Angle + i * angleIncrement) * (pGlobals->maxRadius) },
+			Elite::Vector2{ cosf(m_Angle + i * angleIncrement) * (pGlobals->explorationRadius),
+				sinf(m_Angle + i * angleIncrement) * (pGlobals->explorationRadius) },
 			10, { 0,0,0 });
 	}
 }
@@ -453,14 +137,13 @@ void GoInHouse::ExecuteEvent(Elite::Blackboard* pBlackboard)
 
 	auto agentInfo = pInterface->Agent_GetInfo();
 
-
 	const Elite::Vector2 agentPos{ agentInfo.Position };
 	const HouseInfo curHouse{ pGlobals->currentHouse };
 	const float offset{ 3 };
-	if (agentPos.x > curHouse.Center.x - curHouse.Size.x / 2 + offset && 
-		agentPos.x < curHouse.Center.x + curHouse.Size.x / 2 - offset && 
+	if (agentPos.x > curHouse.Center.x - curHouse.Size.x / 2 + offset &&
+		agentPos.x < curHouse.Center.x + curHouse.Size.x / 2 - offset &&
 		agentPos.y > curHouse.Center.y - curHouse.Size.y / 2 + offset &&
-		agentPos.y < curHouse.Center.y + curHouse.Size.y / 2 - offset) 
+		agentPos.y < curHouse.Center.y + curHouse.Size.y / 2 - offset)
 	{
 		//use this instead of agentInfo.isInHouse, to make sure he is in current house and not in another random hosue
 		pGlobals->currentState = m_Effect;
@@ -514,47 +197,12 @@ void SearchHouse::ExecuteEvent(Elite::Blackboard* pBlackboard)
 		pGlobals->visitedHouses.push_back(pGlobals->currentHouse);
 		RemoveVisitedHouse(pBlackboard, pGlobals->currentHouse);
 		pGlobals->currentHouse = { {0,0} }; //reset currentHouse
-		pGlobals->currentState = m_Effect;
-		pGlobals->actionEnd = true;
-
-	}
-}
-
-
-
-GoOutHouse::GoOutHouse() :
-	Action({ "HouseSearched", true }, { "OutOfHouse", true })
-{}
-
-void GoOutHouse::ExecuteEvent(Elite::Blackboard* pBlackboard)
-{
-
-	GlobalVariables* pGlobals;
-	if (!pBlackboard->GetData("Globals", pGlobals) || pGlobals == nullptr)
-		return;
-
-	IExamInterface* pInterface;
-	if (!pBlackboard->GetData("Interface", pInterface) || pInterface == nullptr)
-		return;
-
-	pGlobals->steeringState = SteeringState::SeekWhileSpinning;
-	auto agentInfo = pInterface->Agent_GetInfo();
-
-
-	Elite::Vector2 toCenter{ pInterface->World_GetInfo().Center - agentInfo.Position };
-	const float distance{ 100 };
-	const Elite::Vector2 exitPoint{ agentInfo.Position + toCenter.GetNormalized() * distance}; //was minus -
-	pGlobals->goalPosition = exitPoint;
-
-	if (!agentInfo.IsInHouse && pGlobals->bottomHouseVisited) //when the house is not in view anymore, find another one
-	{
-		std::cout << "OUT OF HOUSE\n";
-		pGlobals->actionEnd = true;
-		pGlobals->currentState = m_Effect;
 		pGlobals->topHouseVisited = false;
 		pGlobals->bottomHouseVisited = false;
-	}
+		pGlobals->currentState = m_Effect;
+		pGlobals->actionEnd = true;
 
+	}
 }
 #pragma endregion
 
@@ -590,43 +238,43 @@ void GetItemAction::ExecuteEvent(Elite::Blackboard* pBlackboard)
 
 		pGlobals->goalPosition = e.Location;
 
-		if (agentInfo.Position.Distance(pGlobals->goalPosition) < agentInfo.GrabRange)
+		if (agentInfo.Position.Distance(pGlobals->goalPosition) >= agentInfo.GrabRange)
+			return;
+
+		ItemInfo itemInfo;
+		pInterface->Item_GetInfo(e, itemInfo);
+
+		if (itemInfo.Type == eItemType::GARBAGE)
 		{
-			ItemInfo itemInfo;
-			pInterface->Item_GetInfo(e, itemInfo);
-
-			if (itemInfo.Type == eItemType::GARBAGE)
-			{
-				pInterface->Item_Destroy(e);
-			}
-			else if (pGlobals->takenSlots < pInterface->Inventory_GetCapacity()) //if we have room, pick the item
-			{
-				//get free inventorySlot, check if we have room
-				int slot{ GetFreeInventorySpot(pBlackboard) };
-
-				pInterface->Item_Grab(e, itemInfo);
-				if(pInterface->Inventory_AddItem(slot, itemInfo))
-					++pGlobals->takenSlots;
-			}
-			else if (NeedsItemA(pBlackboard)) //we dont have room but we need the item
-			{
-				//get item duplicate, not food
-				int dupeSpot{};
-				if(GiveDuplicateSpot(pBlackboard, dupeSpot))
-					pInterface->Inventory_RemoveItem(dupeSpot);
-
-				pInterface->Item_Grab(e, itemInfo);
-				pInterface->Inventory_AddItem(dupeSpot, itemInfo);
-				
-			}
-			else
-			{
-				pInterface->Item_Destroy(e);
-			}
-
-			pGlobals->currentState = m_Effect;
-			pGlobals->actionEnd = true;
+			pInterface->Item_Destroy(e);
 		}
+		else if (pGlobals->takenSlots < pInterface->Inventory_GetCapacity()) //if we have room, pick the item
+		{
+			//get free inventorySlot
+			int slot{ GetFreeInventorySpot(pBlackboard) };
+
+			pInterface->Item_Grab(e, itemInfo);
+			if(pInterface->Inventory_AddItem(slot, itemInfo))
+				++pGlobals->takenSlots;
+		}
+		else if (NeedsItemA(pBlackboard)) //we dont have room but we need the item
+		{
+			//get item duplicate in inventory, cant be food
+			int dupeSpot{};
+			if(GiveDuplicateSpot(pBlackboard, dupeSpot))
+				pInterface->Inventory_RemoveItem(dupeSpot);
+
+			pInterface->Item_Grab(e, itemInfo);
+			pInterface->Inventory_AddItem(dupeSpot, itemInfo);
+			
+		}
+		else // we dont have room and we dont need the item
+		{
+			pInterface->Item_Destroy(e);
+		}
+
+		pGlobals->currentState = m_Effect;
+		pGlobals->actionEnd = true;
 
 	}
 		
@@ -682,9 +330,6 @@ void Heal::ExecuteEvent(Elite::Blackboard* pBlackboard)
 	if (!pBlackboard->GetData("Interface", pInterface) || pInterface == nullptr)
 		return;
 
-	//pGlobals->steeringState = SteeringState::Seek;
-
-	//auto agentInfo = pInterface->Agent_GetInfo();
 
 	ItemInfo item;
 	int medkitSlot{ 10 };
@@ -750,52 +395,6 @@ void CheckBullets::ExecuteEvent(Elite::Blackboard* pBlackboard)
 	pGlobals->currentState = m_Effect;
 	pGlobals->actionEnd = true;
 
-}
-
-RunAway::RunAway() :
-	Action({ "HasBullets", false }, { "DealWithEnemy", true })
-{}
-
-void RunAway::ExecuteEvent(Elite::Blackboard* pBlackboard)
-{
-	GlobalVariables* pGlobals;
-	if (!pBlackboard->GetData("Globals", pGlobals) || pGlobals == nullptr)
-		return;
-
-	IExamInterface* pInterface;
-	if (!pBlackboard->GetData("Interface", pInterface) || pInterface == nullptr)
-		return;
-
-	std::vector<EntityInfo>* pEntities;
-	if (!pBlackboard->GetData("EntitiesInFOV", pEntities))
-		return;
-
-	auto agentInfo = pInterface->Agent_GetInfo();
-
-
-	pGlobals->steeringState = SteeringState::Seek;
-
-	//run opposite way, kinda wank
-	/*if (pGlobals->steeringState != SteeringState::Flee)
-	{
-		Elite::Vector2 toEnemy{ agentInfo.Position - (*pEntities)[0].Location };
-		pGlobals->goalPosition = toEnemy.GetNormalized() * -m_FleeRadius; ///fleeradius has no effect yet since it just runs till he cant no more
-
-		pGlobals->steeringState = SteeringState::Flee;
-	}*/
-
-	SteeringPlugin_Output* pSteering;
-	if (!pBlackboard->GetData("Steering", pSteering) || pSteering == nullptr)
-		return;
-
-	pSteering->RunMode = true;
-
-	if (agentInfo.Stamina <= 3)
-	{
-		pSteering->RunMode = false;
-		pGlobals->currentState = m_Effect;
-		pGlobals->actionEnd = true;
-	}
 }
 
 KillEnemy::KillEnemy() :

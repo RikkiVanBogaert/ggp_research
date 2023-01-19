@@ -2,7 +2,6 @@
 class ISteeringBehavior;
 
 #include "Action.h"
-//#include "Exam_HelperStructs.h"
 
 enum class SteeringState
 {
@@ -14,7 +13,6 @@ enum class SteeringState
 	FaceAndFlee
 };
 
-//make a map of strings and inventorySlot numbers so i can call the name of an item and get the inventory slot
 struct GlobalVariables
 {
 	GlobalVariables() = default;
@@ -23,7 +21,7 @@ struct GlobalVariables
 	int takenSlots = 0;
 
 	//Houses
-	std::vector<HouseInfo> seenHouses{}; //will replace visitedHouses
+	std::vector<HouseInfo> seenHouses{};
 	std::vector<HouseInfo> visitedHouses{};
 	HouseInfo currentHouse{ {0,0} };
 	bool topHouseVisited = false;
@@ -31,9 +29,7 @@ struct GlobalVariables
 
 	//Other
 	PurgeZoneInfo purgeZone{};
-	float minRadius{};
-	float maxRadius{};
-	float beginRadius{};
+	float explorationRadius{};
 	bool explorationStage = true;
 
 	//GOAP
