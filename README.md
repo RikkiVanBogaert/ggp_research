@@ -41,3 +41,8 @@ So finding one plan which lead to the current goal, will always be the best plan
 
 Apart from this feauture, the GOAP-structure is reusable in different games.
 The only things that have to be added manually every time, are the actions themselves, and the order of priorities in which the goals should be checked.
+
+**Sources**
+https://alumni.media.mit.edu/~jorkin/goap.html
+https://gamedevelopment.tutsplus.com/tutorials/goal-oriented-action-planning-for-a-smarter-ai--cms-20793
+https://www.youtube.com/watch?v=tdBWk2OVCWc
