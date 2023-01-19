@@ -18,7 +18,7 @@ For example:
 -Running from danger    
 -etc...    
 
-##Explanation:
+## Explanation:
 Every action also has a precondition, a state in which the world must be for the AI to go into the new action,
 and an effect, which will leave the world in the new state after the action is complete.
 This makes it so that all the actions fit together like domino pieces, and all the plannner has to do, is find the correct (and shortest/best) path towards the endgoal.
@@ -33,7 +33,7 @@ The planner can also receive multiple goals.
 Each goal will have a different priotity, in order for the planner to try to make a plan for the most important goal first,
 and if it cant find a plan, it moves on to the next goal.
      
-##Current Implementation:    
+## Current Implementation:    
 In the current version of the game, not all aspects of GOAP have been implemented (yet).
 Such as the cost-based plan finding, which allows the planner to find the cheapest goal based on the costs of each action in the plan.
 Which will allow it to make multiple plans, and select the cheapest one to be executed.
@@ -43,7 +43,7 @@ So finding one plan which lead to the current goal, will always be the best plan
 Apart from this feauture, the GOAP-structure is reusable in different games.
 The only things that have to be added manually every time, are the actions themselves, and the order of priorities in which the goals should be checked.
      
-##Sources:   
+## Sources:   
 https://alumni.media.mit.edu/~jorkin/goap.html    
 https://gamedevelopment.tutsplus.com/tutorials/goal-oriented-action-planning-for-a-smarter-ai--cms-20793   
 https://www.youtube.com/watch?v=tdBWk2OVCWc
