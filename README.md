@@ -5,3 +5,4 @@ Intro:
 GOAP is a decision making structure used for AI, similar to a finite state machine, with the biggest difference being that its more flexible.
 You create actions that the AI can perform, and those actions have a precondition which needs to be met before they can be called, and they have an effect on the world.
 Putting all of the actions into a planner, this will create the most optimal path (based on the actions' costs) from your current state towards the goal state you want to achieve.
+![ActionGoapExample](https://user-images.githubusercontent.com/120639013/213435641-d555a040-2e2f-4d37-9595-399cd660f96e.png)
